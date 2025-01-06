@@ -154,7 +154,7 @@ NodeGroupScanResult CSRNodeGroup::scanCommittedPersistent(const Transaction* tra
     RelTableScanState& tableState, CSRNodeGroupScanState& nodeGroupScanState) const {
     if (tableState.cachedBoundNodeSelVector.getSelSize() == 1) {
         // Note that we don't apply cache when there is only one bound node.
-        return scanCommittedPersistentWtihoutCache(transaction, tableState, nodeGroupScanState);
+        return scanCommittedPersistentWithoutCache(transaction, tableState, nodeGroupScanState);
     }
     return scanCommittedPersistentWithCache(transaction, tableState, nodeGroupScanState);
 }
@@ -201,7 +201,7 @@ NodeGroupScanResult CSRNodeGroup::scanCommittedPersistentWithCache(const Transac
     }
 }
 
-NodeGroupScanResult CSRNodeGroup::scanCommittedPersistentWtihoutCache(
+NodeGroupScanResult CSRNodeGroup::scanCommittedPersistentWithoutCache(
     const Transaction* transaction, RelTableScanState& tableState,
     CSRNodeGroupScanState& nodeGroupScanState) const {
     const auto currNodeOffset = tableState.nodeIDVector->readNodeOffset(
@@ -612,16 +612,18 @@ ChunkCheckpointState CSRNodeGroup::checkpointColumnInRegion(const UniqLock& lock
             }
         }
         // Fill gaps if any.
-        int64_t numGaps = csrState.newHeader->getGapSize(nodeOffset);
-        while (numGaps > 0) {
-            // Gaps should only happen at the end of the CSR region.
-            KU_ASSERT((nodeOffset == region.rightNodeOffset - 1) ||
-                      (nodeOffset + 1) % StorageConstants::CSR_LEAF_REGION_SIZE == 0);
-            const auto numGapsToFill =
-                std::min(numGaps, static_cast<int64_t>(DEFAULT_VECTOR_CAPACITY));
-            dummyChunkForNulls->getData().setNumValues(numGapsToFill);
-            newChunk->getData().append(&dummyChunkForNulls->getData(), 0, numGapsToFill);
-            numGaps -= numGapsToFill;
+        if ((nodeOffset + 1) % StorageConstants::CSR_LEAF_REGION_SIZE == 0) {
+            int64_t numGaps = csrState.newHeader->getGapSize(nodeOffset);
+            while (numGaps > 0) {
+                // Gaps should only happen at the end of the CSR region.
+                KU_ASSERT((nodeOffset == region.rightNodeOffset - 1) ||
+                          (nodeOffset + 1) % StorageConstants::CSR_LEAF_REGION_SIZE == 0);
+                const auto numGapsToFill =
+                    std::min(numGaps, static_cast<int64_t>(DEFAULT_VECTOR_CAPACITY));
+                dummyChunkForNulls->getData().setNumValues(numGapsToFill);
+                newChunk->getData().append(&dummyChunkForNulls->getData(), 0, numGapsToFill);
+                numGaps -= numGapsToFill;
+            }
         }
     }
     KU_ASSERT(newChunk->getData().getNumValues() == numRowsInRegion);
@@ -812,19 +814,21 @@ void CSRNodeGroup::checkpointInMemOnly(const UniqLock& lock, NodeGroupCheckpoint
             }
             numRowsTryAppended += maxNumRowsToAppend;
         }
-        auto gapSize = csrState.newHeader->getGapSize(offset);
-        while (gapSize > 0) {
-            // Gaps should only happen at the end of the CSR region.
-            KU_ASSERT((offset == numNodes - 1) ||
-                      (offset + 1) % StorageConstants::CSR_LEAF_REGION_SIZE == 0);
-            const auto numGapsToAppend = std::min(gapSize, DEFAULT_VECTOR_CAPACITY);
-            KU_ASSERT(dummyChunk.state->getSelVector().isUnfiltered());
-            dummyChunk.state->getSelVectorUnsafe().setSelSize(numGapsToAppend);
-            for (auto columnID = 0u; columnID < numColumnsToCheckpoint; columnID++) {
-                dataChunksToFlush[columnID]->getData().append(
-                    dummyChunk.valueVectors[columnID].get(), dummyChunk.state->getSelVector());
+        if ((offset + 1) % StorageConstants::CSR_LEAF_REGION_SIZE == 0) {
+            auto gapSize = csrState.newHeader->getGapSize(offset);
+            while (gapSize > 0) {
+                // Gaps should only happen at the end of the CSR region.
+                KU_ASSERT((offset == numNodes - 1) ||
+                          (offset + 1) % StorageConstants::CSR_LEAF_REGION_SIZE == 0);
+                const auto numGapsToAppend = std::min(gapSize, DEFAULT_VECTOR_CAPACITY);
+                KU_ASSERT(dummyChunk.state->getSelVector().isUnfiltered());
+                dummyChunk.state->getSelVectorUnsafe().setSelSize(numGapsToAppend);
+                for (auto columnID = 0u; columnID < numColumnsToCheckpoint; columnID++) {
+                    dataChunksToFlush[columnID]->getData().append(
+                        dummyChunk.valueVectors[columnID].get(), dummyChunk.state->getSelVector());
+                }
+                gapSize -= numGapsToAppend;
             }
-            gapSize -= numGapsToAppend;
         }
     }
 
