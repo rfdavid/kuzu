@@ -118,6 +118,18 @@ RelTable::RelTable(RelTableCatalogEntry* relTableEntry, const StorageManager* st
         directedRelData.emplace_back(std::make_unique<RelTableData>(dataFH, memoryManager,
             shadowFile, relTableEntry, direction, enableCompression, deSer));
     }
+
+    // hard-coded property 'christmas_toy'
+    std::vector<LogicalType> propertyTypes;
+    propertyColumns.resize(1);
+    auto& property = relTableEntry->getProperty(1);
+    propertyTypes.push_back(property.getType().copy());
+    const auto columnName =
+        StorageUtils::getColumnName(property.getName(), StorageUtils::ColumnType::DEFAULT, "");
+    propertyColumns[0] = ColumnFactory::createColumn(columnName, property.getType().copy(),
+        dataFH, memoryManager, shadowFile, enableCompression);
+    propertyNodeGroups = std::make_unique<NodeGroupCollection>(*memoryManager, propertyTypes,
+        enableCompression, dataFH, deSer);
 }
 
 std::unique_ptr<RelTable> RelTable::loadTable(Deserializer& deSer, const Catalog& catalog,
@@ -520,6 +532,7 @@ void RelTable::prepareCommitForNodeGroup(const Transaction* transaction, NodeGro
         auto [chunkedGroupIdx, rowInChunkedGroup] =
             StorageUtils::getQuotientRemainder(row, ChunkedNodeGroup::CHUNK_CAPACITY);
         std::vector<ColumnChunk*> chunks;
+
         const auto chunkedGroup = localNodeGroup.getChunkedNodeGroup(chunkedGroupIdx);
         for (auto i = 0u; i < chunkedGroup->getNumColumns(); i++) {
             if (i == skippedColumn) {
@@ -527,6 +540,7 @@ void RelTable::prepareCommitForNodeGroup(const Transaction* transaction, NodeGro
             }
             chunks.push_back(&chunkedGroup->getColumnChunk(i));
         }
+
         csrNodeGroup.append(transaction, boundOffsetInGroup, chunks, rowInChunkedGroup,
             1 /*numRows*/);
     }
@@ -545,6 +559,14 @@ void RelTable::checkpoint(Serializer& ser, TableCatalogEntry* tableEntry) {
         }
         tableEntry->vacuumColumnIDs(1);
         hasChanges = false;
+
+        // Store properties separately
+        // For now, hard code property 2
+        std::vector<Column*> checkpointColumnPtrs;
+        checkpointColumnPtrs.push_back(propertyColumns[0].get());
+        NodeGroupCheckpointState state{columnIDs, std::move(checkpointColumnPtrs), *dataFH,
+            memoryManager};
+        propertyNodeGroups->checkpoint(*memoryManager, state);
     }
     Table::serialize(ser);
     ser.writeDebuggingInfo("next_rel_offset");

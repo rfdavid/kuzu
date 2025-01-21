@@ -230,6 +230,9 @@ private:
     std::mutex relOffsetMtx;
     common::offset_t nextRelOffset;
     std::vector<std::unique_ptr<RelTableData>> directedRelData;
+
+    std::unique_ptr<NodeGroupCollection> propertyNodeGroups;
+    std::vector<std::unique_ptr<Column>> propertyColumns;
 };
 
 } // namespace storage
