@@ -128,7 +128,11 @@ std::pair<offset_t, offset_t> NodeGroupCollection::appendToLastNodeGroupAndFlush
         // If the node group is empty now and the chunked group is full, we can directly flush it.
         directFlushWhenAppend =
             numToAppend == numRowsLeftInLastNodeGroup && lastNodeGroup->getNumRows() == 0;
-        pushInsertInfo(transaction, lastNodeGroup, numToAppend);
+
+        // TODO (Rui): fix this
+        //   pushInsertInfo(transaction, lastNodeGroup, numToAppend);
+        directFlushWhenAppend = true;
+
         numTotalRows += numToAppend;
         if (!directFlushWhenAppend) {
             // TODO(Guodong): Furthur optimize on this. Should directly figure out startRowIdx to

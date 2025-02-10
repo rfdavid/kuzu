@@ -136,6 +136,9 @@ void Partitioner::initializePartitioningStates(const logical_type_vec_t& columnT
 
 void Partitioner::executeInternal(ExecutionContext* context) {
     const auto relOffsetVector = resultSet->getValueVector(info.relOffsetDataPos);
+
+    std::vector<ValueVector*> vectorsToAppend;
+
     while (children[0]->getNextTuple(context)) {
         KU_ASSERT(dataInfo.columnEvaluators.size() >= 1);
         const auto numRels = relOffsetVector->state->getSelVector().getSelSize();
@@ -150,12 +153,35 @@ void Partitioner::executeInternal(ExecutionContext* context) {
                 evaluator->evaluate();
             }
             }
+            // last property column
+            if (i == 3) {
+                vectorsToAppend.push_back(evaluator->resultVector.get());
+            }
         }
+
         auto currentRelOffset = sharedState->relTable->reserveRelOffsets(numRels);
         for (auto i = 0u; i < numRels; i++) {
             const auto pos = relOffsetVector->state->getSelVector()[i];
             relOffsetVector->setValue<offset_t>(pos, currentRelOffset++);
         }
+
+        std::vector<kuzu::common::LogicalType> propertyTypes;
+        propertyTypes.push_back(dataInfo.columnTypes[3].copy());
+
+       auto chunkedGroup = std::make_unique<ChunkedNodeGroup>(
+            *context->clientContext->getMemoryManager(),
+            propertyTypes,
+            /* enableCompression */ false,
+            StorageConstants::NODE_GROUP_SIZE,
+            /* startOffset */0,
+            ResidencyState::IN_MEMORY
+        );
+
+        chunkedGroup->append(context->clientContext->getTransaction(), vectorsToAppend, 0, numRels);
+
+        sharedState->relTable->propertyNodeGroups->appendToLastNodeGroupAndFlushWhenFull(
+            context->clientContext->getTransaction(), *chunkedGroup);
+
         for (auto partitioningIdx = 0u; partitioningIdx < info.infos.size(); partitioningIdx++) {
             auto& partitionInfo = info.infos[partitioningIdx];
             auto keyVector = dataInfo.columnEvaluators[partitionInfo.keyIdx]->resultVector;

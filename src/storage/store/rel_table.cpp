@@ -118,6 +118,17 @@ RelTable::RelTable(RelTableCatalogEntry* relTableEntry, const StorageManager* st
         directedRelData.emplace_back(std::make_unique<RelTableData>(dataFH, memoryManager,
             shadowFile, relTableEntry, direction, enableCompression, deSer));
     }
+
+    std::vector<LogicalType> propertyTypes;
+    propertyColumns.resize(1);
+    auto& property = relTableEntry->getProperty(1);
+    propertyTypes.push_back(property.getType().copy());
+    const auto columnName =
+        StorageUtils::getColumnName(property.getName(), StorageUtils::ColumnType::DEFAULT, "");
+    propertyColumns[0] = ColumnFactory::createColumn(columnName, property.getType().copy(), dataFH,
+        memoryManager, shadowFile, enableCompression);
+    propertyNodeGroups = std::make_unique<NodeGroupCollection>(*memoryManager, propertyTypes,
+        enableCompression, dataFH, deSer);
 }
 
 std::unique_ptr<RelTable> RelTable::loadTable(Deserializer& deSer, const Catalog& catalog,
@@ -537,8 +548,11 @@ void RelTable::checkpoint(Serializer& ser, TableCatalogEntry* tableEntry) {
         // Deleted columns are vaccumed and not checkpointed or serialized.
         std::vector<column_id_t> columnIDs;
         columnIDs.push_back(0);
-        for (auto& property : tableEntry->getProperties()) {
-            columnIDs.push_back(tableEntry->getColumnID(property.getName()));
+        // (Rui) skip the last one for now
+        auto& properties = tableEntry->getProperties();
+        for (size_t i = 0; i < properties.size() - 1; ++i) {
+            const auto& propertyName = properties[i].getName();
+            columnIDs.push_back(tableEntry->getColumnID(propertyName));
         }
         for (auto& directedRelData : directedRelData) {
             directedRelData->checkpoint(columnIDs);

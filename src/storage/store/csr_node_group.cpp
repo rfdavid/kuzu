@@ -725,7 +725,8 @@ void CSRNodeGroup::collectOnDiskRegionChangesAndUpdateHeaderLength(const UniqLoc
 void CSRNodeGroup::collectPersistentUpdatesInRegion(CSRRegion& region, offset_t leftCSROffset,
     offset_t rightCSROffset) const {
     // TODO(Guodong): Should take columnIDs from csrState here.
-    const auto numColumns = dataTypes.size();
+    // (Rui) skip the last one for now
+    const auto numColumns = std::min<uint>(dataTypes.size(), 2);
     region.hasUpdates.resize(numColumns, false);
     for (auto columnID = 0u; columnID < numColumns; columnID++) {
         if (persistentChunkGroup->hasAnyUpdates(&DUMMY_CHECKPOINT_TRANSACTION, columnID,

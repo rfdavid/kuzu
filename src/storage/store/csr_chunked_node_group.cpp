@@ -7,6 +7,8 @@
 #include "storage/store/csr_node_group.h"
 #include "transaction/transaction.h"
 
+#include <iostream>
+
 using namespace kuzu::common;
 
 namespace kuzu {
@@ -244,10 +246,26 @@ std::unique_ptr<ChunkedNodeGroup> ChunkedCSRNodeGroup::flushAsNewChunkedNodeGrou
     auto csrLength = std::make_unique<ColumnChunk>(csrHeader.length->isCompressionEnabled(),
         Column::flushChunkData(csrHeader.length->getData(), dataFH));
     std::vector<std::unique_ptr<ColumnChunk>> flushedChunks(getNumColumns());
-    for (auto i = 0u; i < getNumColumns(); i++) {
+    // (Rui) skip the last column for now
+    for (auto i = 0u; i < getNumColumns() - 1; i++) {
         flushedChunks[i] = std::make_unique<ColumnChunk>(getColumnChunk(i).isCompressionEnabled(),
             Column::flushChunkData(getColumnChunk(i).getData(), dataFH));
     }
+
+    std::cout << "Flushed CSR node group with " << numRows << " rows:" << std::endl;
+
+    for (auto x = 0; x < 2; x++) {
+        std::cout << "Column Chunk " << x << std::endl;
+        const auto localOffsets =
+            reinterpret_cast<offset_t*>(getColumnChunk(x).getData().getData());
+        for (auto i = 0u; i < getColumnChunk(x).getNumValues(); i++) {
+            std::cout << "offset[" << i << "]: " << localOffsets[i] << std::endl;
+        }
+    }
+
+    std::cout << std::endl;
+
+
     ChunkedCSRHeader newCSRHeader{std::move(csrOffset), std::move(csrLength)};
     auto flushedChunkedGroup = std::make_unique<ChunkedCSRNodeGroup>(std::move(newCSRHeader),
         std::move(flushedChunks), 0 /*startRowIdx*/);

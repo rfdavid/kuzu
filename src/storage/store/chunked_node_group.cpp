@@ -24,7 +24,8 @@ ChunkedNodeGroup::ChunkedNodeGroup(std::vector<std::unique_ptr<ColumnChunk>> chu
     residencyState = this->chunks[0]->getResidencyState();
     numRows = this->chunks[0]->getNumValues();
     capacity = numRows;
-    for (auto columnID = 1u; columnID < this->chunks.size(); columnID++) {
+    // (Rui) skip the last column for now
+    for (auto columnID = 1u; columnID < this->chunks.size() - 1 ; columnID++) {
         KU_ASSERT(this->chunks[columnID]->getNumValues() == numRows);
         KU_ASSERT(this->chunks[columnID]->getResidencyState() == residencyState);
     }
@@ -103,8 +104,9 @@ void ChunkedNodeGroup::resetVersionAndUpdateInfo() {
     if (versionInfo) {
         versionInfo.reset();
     }
-    for (const auto& chunk : chunks) {
-        chunk->resetUpdateInfo();
+    // (Rui) skip the last one for now
+    for (uint i = 0; i < chunks.size() - 1; ++i ) {
+        chunks[i]->resetUpdateInfo();
     }
 }
 
