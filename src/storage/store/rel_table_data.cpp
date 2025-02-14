@@ -72,7 +72,10 @@ RelTableData::RelTableData(FileHandle* dataFH, MemoryManager* mm, ShadowFile* sh
     // default to using the persistent version record handler
     // if we want to use the in-memory handler we will explicitly pass it into
     // nodeGroups.pushInsertInfo()
-    nodeGroups = std::make_unique<NodeGroupCollection>(*mm, getColumnTypes(), enableCompression,
+    std::vector<kuzu::common::LogicalType> columnTypes;
+    columnTypes.push_back(getColumnTypes()[0].copy());
+    columnTypes.push_back(getColumnTypes()[1].copy());
+    nodeGroups = std::make_unique<NodeGroupCollection>(*mm, columnTypes, enableCompression,
         dataFH, deSer, &persistentVersionRecordHandler);
 }
 
@@ -90,13 +93,14 @@ void RelTableData::initCSRHeaderColumns() {
 
 void RelTableData::initPropertyColumns(const TableCatalogEntry* tableEntry) {
     const auto maxColumnID = tableEntry->getMaxColumnID();
-    columns.resize(maxColumnID + 1);
+    // columns.resize(maxColumnID + 1);
+    columns.resize(maxColumnID);
     auto nbrIDColName = StorageUtils::getColumnName("NBR_ID", StorageUtils::ColumnType::DEFAULT,
         RelDirectionUtils::relDirectionToString(direction));
     auto nbrIDColumn = std::make_unique<InternalIDColumn>(nbrIDColName, dataFH, memoryManager,
         shadowFile, enableCompression);
     columns[NBR_ID_COLUMN_ID] = std::move(nbrIDColumn);
-    for (auto i = 0u; i < tableEntry->getNumProperties(); i++) {
+    for (auto i = 0u; i < tableEntry->getNumProperties() - 1; i++) {
         auto& property = tableEntry->getProperty(i);
         const auto columnID = tableEntry->getColumnID(property.getName());
         const auto colName = StorageUtils::getColumnName(property.getName(),

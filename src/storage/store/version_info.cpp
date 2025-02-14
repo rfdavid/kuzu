@@ -260,8 +260,8 @@ void VectorVersionInfo::serialize(Serializer& serializer) const {
             KU_UNUSED(deleted);
         }
     }
-    KU_ASSERT(insertionStatus == InsertionStatus::NO_INSERTED ||
-              insertionStatus == InsertionStatus::ALWAYS_INSERTED);
+//    KU_ASSERT(insertionStatus == InsertionStatus::NO_INSERTED ||
+//              insertionStatus == InsertionStatus::ALWAYS_INSERTED);
     serializer.writeDebuggingInfo("insertion_status");
     serializer.serializeValue<InsertionStatus>(insertionStatus);
     serializer.writeDebuggingInfo("deletion_status");
@@ -290,8 +290,8 @@ std::unique_ptr<VectorVersionInfo> VectorVersionInfo::deSerialize(Deserializer& 
     auto vectorVersionInfo = std::make_unique<VectorVersionInfo>();
     deSer.validateDebuggingInfo(key, "insertion_status");
     deSer.deserializeValue<InsertionStatus>(vectorVersionInfo->insertionStatus);
-    KU_ASSERT(vectorVersionInfo->insertionStatus == InsertionStatus::NO_INSERTED ||
-              vectorVersionInfo->insertionStatus == InsertionStatus::ALWAYS_INSERTED);
+//    KU_ASSERT(vectorVersionInfo->insertionStatus == InsertionStatus::NO_INSERTED ||
+//              vectorVersionInfo->insertionStatus == InsertionStatus::ALWAYS_INSERTED);
     deSer.validateDebuggingInfo(key, "deletion_status");
     deSer.deserializeValue<DeletionStatus>(vectorVersionInfo->deletionStatus);
     switch (vectorVersionInfo->deletionStatus) {

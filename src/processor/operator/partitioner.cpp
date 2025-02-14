@@ -177,19 +177,19 @@ void Partitioner::executeInternal(ExecutionContext* context) {
             ResidencyState::IN_MEMORY
         );
 
-        chunkedGroup->append(context->clientContext->getTransaction(), vectorsToAppend, 0, numRels);
+       chunkedGroup->append(context->clientContext->getTransaction(), vectorsToAppend, 0, numRels);
 
-        sharedState->relTable->propertyNodeGroups->appendToLastNodeGroupAndFlushWhenFull(
-            context->clientContext->getTransaction(), *chunkedGroup);
+       sharedState->relTable->propertyNodeGroups->appendToLastNodeGroupAndFlushWhenFull(
+           context->clientContext->getTransaction(), *chunkedGroup);
 
-        for (auto partitioningIdx = 0u; partitioningIdx < info.infos.size(); partitioningIdx++) {
-            auto& partitionInfo = info.infos[partitioningIdx];
-            auto keyVector = dataInfo.columnEvaluators[partitionInfo.keyIdx]->resultVector;
-            partitionIdxes->state = keyVector->state;
-            partitionInfo.partitionerFunc(keyVector.get(), partitionIdxes.get());
-            auto chunkToCopyFrom = constructDataChunk(keyVector->state);
-            copyDataToPartitions(*context->clientContext->getMemoryManager(), partitioningIdx,
-                std::move(chunkToCopyFrom));
+       for (auto partitioningIdx = 0u; partitioningIdx < info.infos.size(); partitioningIdx++) {
+           auto& partitionInfo = info.infos[partitioningIdx];
+           auto keyVector = dataInfo.columnEvaluators[partitionInfo.keyIdx]->resultVector;
+           partitionIdxes->state = keyVector->state;
+           partitionInfo.partitionerFunc(keyVector.get(), partitionIdxes.get());
+           auto chunkToCopyFrom = constructDataChunk(keyVector->state);
+           copyDataToPartitions(*context->clientContext->getMemoryManager(), partitioningIdx,
+               std::move(chunkToCopyFrom));
         }
     }
     sharedState->merge(std::move(localState->partitioningBuffers));

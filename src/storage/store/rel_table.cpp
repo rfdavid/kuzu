@@ -114,10 +114,6 @@ RelTable::RelTable(RelTableCatalogEntry* relTableEntry, const StorageManager* st
     : Table{relTableEntry, storageManager, memoryManager},
       fromNodeTableID{relTableEntry->getSrcTableID()},
       toNodeTableID{relTableEntry->getDstTableID()}, nextRelOffset{0} {
-    for (auto direction : relTableEntry->getRelDataDirections()) {
-        directedRelData.emplace_back(std::make_unique<RelTableData>(dataFH, memoryManager,
-            shadowFile, relTableEntry, direction, enableCompression, deSer));
-    }
 
     std::vector<LogicalType> propertyTypes;
     propertyColumns.resize(1);
@@ -129,6 +125,12 @@ RelTable::RelTable(RelTableCatalogEntry* relTableEntry, const StorageManager* st
         memoryManager, shadowFile, enableCompression);
     propertyNodeGroups = std::make_unique<NodeGroupCollection>(*memoryManager, propertyTypes,
         enableCompression, dataFH, deSer);
+
+    for (auto direction : relTableEntry->getRelDataDirections()) {
+        directedRelData.emplace_back(std::make_unique<RelTableData>(dataFH, memoryManager,
+            shadowFile, relTableEntry, direction, enableCompression, deSer));
+    }
+
 }
 
 std::unique_ptr<RelTable> RelTable::loadTable(Deserializer& deSer, const Catalog& catalog,
@@ -547,22 +549,32 @@ void RelTable::checkpoint(Serializer& ser, TableCatalogEntry* tableEntry) {
     if (hasChanges) {
         // Deleted columns are vaccumed and not checkpointed or serialized.
         std::vector<column_id_t> columnIDs;
+        std::vector<column_id_t> propertyColumnIDs;
+
         columnIDs.push_back(0);
         // (Rui) skip the last one for now
         auto& properties = tableEntry->getProperties();
-        for (size_t i = 0; i < properties.size() - 1; ++i) {
+        for (size_t i = 0; i < properties.size(); ++i) {
             const auto& propertyName = properties[i].getName();
-            columnIDs.push_back(tableEntry->getColumnID(propertyName));
+            if (i == properties.size() - 1) {
+                propertyColumnIDs.push_back(tableEntry->getColumnID(propertyName));
+            } else {
+                columnIDs.push_back(tableEntry->getColumnID(propertyName));
+            }
         }
         for (auto& directedRelData : directedRelData) {
             directedRelData->checkpoint(columnIDs);
         }
+
         tableEntry->vacuumColumnIDs(1);
         hasChanges = false;
     }
     Table::serialize(ser);
     ser.writeDebuggingInfo("next_rel_offset");
     ser.write<offset_t>(nextRelOffset);
+
+    propertyNodeGroups->serialize(ser);
+
     for (auto& directedRelData : directedRelData) {
         directedRelData->serialize(ser);
     }
