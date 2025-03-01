@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "storage/store/rel_table.h"
 
 #include "catalog/catalog_entry/rel_table_catalog_entry.h"

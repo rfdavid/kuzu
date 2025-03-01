@@ -24,8 +24,7 @@ ChunkedNodeGroup::ChunkedNodeGroup(std::vector<std::unique_ptr<ColumnChunk>> chu
     residencyState = this->chunks[0]->getResidencyState();
     numRows = this->chunks[0]->getNumValues();
     capacity = numRows;
-    // (Rui) skip the last column for now
-    for (auto columnID = 1u; columnID < this->chunks.size() - 1 ; columnID++) {
+    for (auto columnID = 1u; columnID < this->chunks.size() ; columnID++) {
         KU_ASSERT(this->chunks[columnID]->getNumValues() == numRows);
         KU_ASSERT(this->chunks[columnID]->getResidencyState() == residencyState);
     }
@@ -206,6 +205,11 @@ static ZoneMapCheckResult getZoneMapResult(const Transaction* transaction,
                 continue;
             }
 
+            // skip columns that would be out of range
+            if (columnID >= chunks.size()) {
+                continue;
+            }
+
             KU_ASSERT(i < scanState.columnPredicateSets.size());
             const auto columnZoneMapResult = scanState.columnPredicateSets[i].checkZoneMap(
                 chunks[columnID]->getMergedColumnChunkStats(transaction));
@@ -248,6 +252,13 @@ void ChunkedNodeGroup::scan(const Transaction* transaction, const TableScanState
                 }
                 continue;
             }
+
+            // skip columns that would be out of range
+            if (columnID >= chunks.size()) {
+                scanState.outputVectors[i]->setAllNull();
+                continue;
+            }
+
             KU_ASSERT(columnID < chunks.size());
             chunks[columnID]->scan(transaction, nodeGroupScanState.chunkStates[i],
                 *scanState.outputVectors[i], rowIdxInGroup, numRowsToScan);

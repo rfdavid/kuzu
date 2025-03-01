@@ -2,6 +2,7 @@ add_library(kuzu_planner_scan
         OBJECT
         logical_expressions_scan.cpp
         logical_index_look_up.cpp
+        logical_rel_property_scan.cpp
         logical_scan_node_table.cpp)
 
 set(ALL_OBJECT_FILES

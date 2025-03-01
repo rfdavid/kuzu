@@ -306,7 +306,18 @@ void Planner::planRelScan(uint32_t relPos) {
         auto [boundNode, nbrNode] = getBoundAndNbrNodes(*rel, direction);
         const auto extendDirection = getExtendDirection(*rel, *boundNode);
         appendScanNodeTable(boundNode->getInternalID(), boundNode->getTableIDs(), {}, *plan);
-        appendExtend(boundNode, nbrNode, rel, extendDirection, getProperties(*rel), *plan);
+
+        binder::expression_vector relIDProperty, relProperties;
+        for (const auto& prop : getProperties(*rel)) {
+            if (prop->getDataType().getLogicalTypeID() == common::LogicalTypeID::INTERNAL_ID) {
+                relIDProperty.push_back(prop);
+            } else {
+                relProperties.push_back(prop);
+            }
+        }
+
+        appendExtend(boundNode, nbrNode, rel, extendDirection, relIDProperty, *plan);
+        appendRelPropertyScan(boundNode, nbrNode, rel, relProperties, *plan);
         appendFilters(predicates, *plan);
         context.addPlan(newSubgraph, std::move(plan));
     }

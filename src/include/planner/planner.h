@@ -182,6 +182,10 @@ public:
         common::ExtendDirection direction, const binder::expression_vector& properties,
         LogicalPlan& plan);
 
+    void appendRelPropertyScan(std::shared_ptr<binder::NodeExpression> boundNode,
+        std::shared_ptr<binder::NodeExpression> nbrNode, std::shared_ptr<binder::RelExpression> rel,
+        const binder::expression_vector& properties, LogicalPlan& plan);
+
     // Plan dp level
     void planLevel(uint32_t level);
     void planLevelExactly(uint32_t level);
@@ -358,7 +362,7 @@ private:
     PropertyExprCollection propertyExprCollection;
     CardinalityEstimator cardinalityEstimator;
     JoinOrderEnumeratorContext context;
-};
+    };
 
 } // namespace planner
 } // namespace kuzu

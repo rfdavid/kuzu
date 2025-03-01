@@ -95,8 +95,12 @@ void CSRNodeGroup::initScanForCommittedPersistent(const Transaction* transaction
             relScanState.columnIDs[i] == ROW_IDX_COLUMN_ID) {
             continue;
         }
-        auto& chunk = persistentChunkGroup->getColumnChunk(relScanState.columnIDs[i]);
-        chunk.initializeScanState(nodeGroupScanState.chunkStates[i], relScanState.columns[i]);
+
+        if (relScanState.columnIDs[i] < 2) { // only process NBR_ID and REL_ID
+            auto& chunk = persistentChunkGroup->getColumnChunk(relScanState.columnIDs[i]);
+            chunk.initializeScanState(nodeGroupScanState.chunkStates[i], relScanState.columns[i]);
+        }
+
     }
     KU_ASSERT(csrHeader.offset->getNumValues() == csrHeader.length->getNumValues());
     if (relScanState.randomLookup) {
@@ -192,6 +196,7 @@ NodeGroupScanResult CSRNodeGroup::scanCommittedPersistentWithCache(const Transac
         if (startCSROffset > nodeGroupScanState.nextRowToScan) {
             nodeGroupScanState.nextRowToScan = startCSROffset;
         }
+
         KU_ASSERT(nodeGroupScanState.nextRowToScan <= nodeGroupScanState.numTotalRows);
         const auto numToScan =
             std::min(nodeGroupScanState.numTotalRows - nodeGroupScanState.nextRowToScan,

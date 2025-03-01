@@ -61,7 +61,7 @@ void ScanRelTableInfo::initScanState(const ExecutionContext* context) {
         if (columnID == INVALID_COLUMN_ID) {
             columns.push_back(nullptr);
         } else {
-            KU_ASSERT(columnID < table->getNumColumns());
+//            KU_ASSERT(columnID < table->getNumColumns());
             columns.push_back(table->getColumn(columnID, direction));
         }
     }

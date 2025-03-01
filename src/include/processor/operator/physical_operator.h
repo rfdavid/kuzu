@@ -50,6 +50,7 @@ enum class PhysicalOperatorType : uint8_t {
     PROFILE,
     RECURSIVE_JOIN,
     RESULT_COLLECTOR,
+    REL_PROPERTY_SCAN,
     SCAN_NODE_TABLE,
     SCAN_REL_TABLE,
     SEMI_MASKER,

@@ -132,6 +132,7 @@ public:
 
     // TODO: move to private
     std::unique_ptr<NodeGroupCollection> propertyNodeGroups;
+    std::vector<std::unique_ptr<Column>> propertyColumns;
 
     using rel_multiplicity_constraint_throw_func_t =
         std::function<void(const std::string&, common::offset_t, common::RelDataDirection)>;
@@ -234,8 +235,6 @@ private:
     std::mutex relOffsetMtx;
     common::offset_t nextRelOffset;
     std::vector<std::unique_ptr<RelTableData>> directedRelData;
-
-    std::vector<std::unique_ptr<Column>> propertyColumns;
 };
 
 } // namespace storage

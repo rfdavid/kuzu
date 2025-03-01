@@ -23,7 +23,9 @@ static ScanRelTableInfo getRelTableScanInfo(const TableCatalogEntry& tableCatalo
     // We always should scan nbrID from relTable. This is not a property in the schema label, so
     // cannot be bound to a column in the front-end.
     columnIDs.push_back(shouldScanNbrID ? NBR_ID_COLUMN_ID : INVALID_COLUMN_ID);
-    for (auto& expr : properties) {
+    columnIDs.push_back(REL_ID_COLUMN_ID); // always scan for property lookup
+
+/*    for (auto& expr : properties) {
         auto& property = expr->constCast<PropertyExpression>();
         if (property.hasProperty(relTableID)) {
             columnIDs.push_back(tableCatalogEntry.getColumnID(property.getPropertyName()));
@@ -31,6 +33,7 @@ static ScanRelTableInfo getRelTableScanInfo(const TableCatalogEntry& tableCatalo
             columnIDs.push_back(INVALID_COLUMN_ID);
         }
     }
+    */
     return ScanRelTableInfo(relTable, direction, std::move(columnIDs),
         copyVector(columnPredicates));
 }

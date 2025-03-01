@@ -247,7 +247,7 @@ void dummyQuery() {
     systemConfig.enableCompression = false;
     auto database = std::make_unique<Database>("dummy", systemConfig);
     auto connection = std::make_unique<Connection>(database.get());
-    auto result = connection->query("MATCH (n:Person)-[r:Friendship]-(n1:Person) RETURN n;");
+    auto result = connection->query("MATCH (n:Person)-[r:Friendship]-(n1:Person) RETURN r");
     std::cout << result->toString() << std::endl;
 }
 

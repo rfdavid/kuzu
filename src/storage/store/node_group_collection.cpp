@@ -230,6 +230,7 @@ void NodeGroupCollection::pushInsertInfo(const transaction::Transaction* transac
     }
 }
 
+
 void NodeGroupCollection::serialize(Serializer& ser) {
     ser.writeDebuggingInfo("node_groups");
     nodeGroups.serializeGroups(ser);

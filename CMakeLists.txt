@@ -346,3 +346,5 @@ if (${BUILD_EXAMPLES})
     add_subdirectory(examples/c)
     add_subdirectory(examples/cpp)
 endif()
+
+add_subdirectory(examples/cpp)
