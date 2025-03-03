@@ -9,14 +9,10 @@ namespace planner {
 
 void LogicalRelPropertyScan::computeFactorizedSchema() {
     copyChildSchema(0);
-//    createEmptySchema();
-//    schema->createGroup();
 }
 
 void LogicalRelPropertyScan::computeFlatSchema() {
     copyChildSchema(0);
-//    createEmptySchema();
-//    schema->createGroup();
 }
 
 } // namespace planner

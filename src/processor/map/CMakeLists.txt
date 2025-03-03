@@ -35,6 +35,7 @@ add_library(kuzu_processor_mapper
         map_path_property_probe.cpp
         map_projection.cpp
         map_recursive_extend.cpp
+        map_rel_property_scan.cpp
         map_scan_node_table.cpp
         map_semi_masker.cpp
         map_set.cpp

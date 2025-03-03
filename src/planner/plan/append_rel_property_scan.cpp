@@ -11,7 +11,11 @@ namespace planner {
 void Planner::appendRelPropertyScan(std::shared_ptr<NodeExpression> boundNode,
     std::shared_ptr<NodeExpression> nbrNode, std::shared_ptr<RelExpression> rel,
     const binder::expression_vector& properties, LogicalPlan& plan) {
-    auto relScan = std::make_shared<LogicalRelPropertyScan>();
+    auto lastOperator = plan.getLastOperator();
+    
+    auto relScan = std::make_shared<LogicalRelPropertyScan>(lastOperator);
+    // relScan->setProperties(properties);
+
     plan.setLastOperator(std::move(relScan));
 }
 

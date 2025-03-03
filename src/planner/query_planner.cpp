@@ -1,5 +1,6 @@
 #include "binder/query/bound_regular_query.h"
 #include "planner/operator/logical_union.h"
+#include "planner/operator/scan/logical_rel_property_scan.h"
 #include "planner/planner.h"
 
 using namespace kuzu::binder;
@@ -61,6 +62,13 @@ std::unique_ptr<LogicalPlan> Planner::getBestPlan(std::vector<std::unique_ptr<Lo
             bestPlan = std::move(plans[i]);
         }
     }
+
+    // HACK INTO PLAN SO REL PROPERTY SCAN CAN BE INSERTED
+    auto projectionOp = bestPlan->getLastOperator();
+    auto originalChild = projectionOp->getChild(0);
+    auto relPropertyScan = std::make_shared<LogicalRelPropertyScan>(originalChild);
+    projectionOp->setChild(0, relPropertyScan);
+
     return bestPlan;
 }
 

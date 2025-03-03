@@ -146,8 +146,7 @@ std::unique_ptr<PhysicalOperator> PlanMapper::mapOperator(LogicalOperator* logic
         physicalOperator = mapRecursiveExtend(logicalOperator);
     } break;
     case LogicalOperatorType::REL_PROPERTY_SCAN: {
-        printf("ok");
-        // TODO
+        physicalOperator = mapRelPropertyScan(logicalOperator);
     } break;
     case LogicalOperatorType::SCAN_NODE_TABLE: {
         physicalOperator = mapScanNodeTable(logicalOperator);
