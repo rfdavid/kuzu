@@ -11,14 +11,9 @@ namespace processor {
 std::unique_ptr<PhysicalOperator> PlanMapper::mapRelPropertyScan(LogicalOperator* logicalOperator) {
     auto logicalRelPropertyScan = ku_dynamic_cast<LogicalRelPropertyScan*>(logicalOperator);
     
-    // Map the child operator first (which should be an extension, scan, or other operator that produces relationships)
     auto childOperator = mapOperator(logicalOperator->getChild(0).get());
-    
-    // Create the RelPropertyScan as a unary operator with the mapped child
     auto physicalRelPropertyScan = std::make_unique<RelPropertyScan>(std::move(childOperator), getOperatorID());
-    
-    // Additional mapping logic can be added here if needed
-    
+
     return physicalRelPropertyScan;
 }
 

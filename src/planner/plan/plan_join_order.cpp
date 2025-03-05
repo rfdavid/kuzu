@@ -317,7 +317,7 @@ void Planner::planRelScan(uint32_t relPos) {
         }
 
         appendExtend(boundNode, nbrNode, rel, extendDirection, relIDProperty, *plan);
-        appendRelPropertyScan(boundNode, nbrNode, rel, relProperties, *plan);
+//        appendRelPropertyScan(boundNode, nbrNode, rel, relProperties, *plan);
         appendFilters(predicates, *plan);
         context.addPlan(newSubgraph, std::move(plan));
     }

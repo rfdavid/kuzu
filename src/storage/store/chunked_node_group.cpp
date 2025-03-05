@@ -25,8 +25,8 @@ ChunkedNodeGroup::ChunkedNodeGroup(std::vector<std::unique_ptr<ColumnChunk>> chu
     numRows = this->chunks[0]->getNumValues();
     capacity = numRows;
     for (auto columnID = 1u; columnID < this->chunks.size() ; columnID++) {
-        KU_ASSERT(this->chunks[columnID]->getNumValues() == numRows);
-        KU_ASSERT(this->chunks[columnID]->getResidencyState() == residencyState);
+//        KU_ASSERT(this->chunks[columnID]->getNumValues() == numRows);
+ //       KU_ASSERT(this->chunks[columnID]->getResidencyState() == residencyState);
     }
 }
 

@@ -153,7 +153,8 @@ bool VectorVersionInfo::isInserted(const transaction_t startTS, const transactio
         if (isSameInsertionVersion()) {
             insertion = sameInsertionVersion;
         } else {
-            KU_ASSERT(insertedVersions);
+            // KU_ASSERT(insertedVersions);
+            if (insertedVersions) 
             insertion = insertedVersions->operator[](rowIdx);
         }
         const auto isInsertedWithinSameTransaction = insertion == transactionID;

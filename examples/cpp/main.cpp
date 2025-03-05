@@ -247,7 +247,7 @@ void dummyQuery() {
     systemConfig.enableCompression = false;
     auto database = std::make_unique<Database>("dummy", systemConfig);
     auto connection = std::make_unique<Connection>(database.get());
-    auto result = connection->query("MATCH (n:Person)-[r:Friendship]-(n1:Person) RETURN r");
+    auto result = connection->query("MATCH (n:Person)-[r:Friendship]->(n1:Person) RETURN n,r,n1");
     std::cout << result->toString() << std::endl;
 }
 
@@ -262,16 +262,17 @@ void dummy() {
 	connection->query("CALL THREADS=1;");
     connection->query("CREATE NODE TABLE Person(id INT64, name STRING, PRIMARY KEY (id));");
 	connection->query("CREATE REL TABLE Friendship(FROM Person TO Person, alma_matter STRING);");
+	// connection->query("CREATE REL TABLE Friendship(FROM Person TO Person, alma_matter INT64);");
     connection->query("CHECKPOINT;");
     connection->query("CREATE (u:Person {id: 0, name: 'Jill'});");
     connection->query("CREATE (u:Person {id: 1, name: 'Alice'});");
     connection->query("CREATE (u:Person {id: 2, name: 'Bob'});");
-//    connection->query("MATCH (u1:Person), (u2:Person) WHERE u1.name = 'Alice' AND u2.name = 'Bob' CREATE (u1)-[:Friendship {christmas_toy: 'Gingerbread house'}]->(u2);");
+//    connection->query("MATCH (u1:Person), (u2:Person) WHERE u1.name = 'Alice' AND u2.name = 'Bob' CREATE (u1)-[:Friendship {alma_matter: 123123123123}]->(u2);");
 //    connection->query("MATCH (n:Person)-[r:Friendship]->(n1:Person) RETURN r.christmas_toy;");
     connection->query("COPY Friendship FROM '/Users/rfdavid/Devel/waterloo/tmp/rel.csv'");
-    auto result = connection->query("MATCH (n:Person)-[r:Friendship]-(n1:Person) RETURN n;");
-//    connection->query("CREATE (u:Person {id: 2, name: 'Jill'});");
-    std::cout << result->toString() << std::endl;
+    //    auto result = connection->query("MATCH (n:Person)-[r:Friendship]-(n1:Person) RETURN n;");
+    //    connection->query("CREATE (u:Person {id: 2, name: 'Jill'});");
+    //    std::cout << result->toString() << std::endl;
 }
 
 void soc() {
