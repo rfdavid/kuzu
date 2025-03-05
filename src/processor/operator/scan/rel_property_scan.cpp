@@ -13,7 +13,6 @@ namespace processor {
 void RelPropertyScan::initLocalStateInternal(ResultSet* resultSet, ExecutionContext* context) {
     this->resultSet = resultSet;
     
-    // relIDVector contain the rel IDs to be scanned
     if (resultSet->dataChunks.size() > 0 && resultSet->getDataChunk(1)->getNumValueVectors() > 0) {
         relIDVector = resultSet->getDataChunk(1)->valueVectors[2].get();
     }
@@ -43,7 +42,6 @@ bool RelPropertyScan::getNextTuplesInternal(ExecutionContext* context) {
         return true;
     }
     
-    // Get relation IDs from the relIDVector
     const auto& selVector = relIDVector->state->getSelVector();
     auto numRows = selVector.getSelSize();
     
@@ -51,23 +49,18 @@ bool RelPropertyScan::getNextTuplesInternal(ExecutionContext* context) {
         return true;
     }
     
-    // Reset the property vector's selection vector to match the input
     propertyVector->state->getSelVectorUnsafe().setToFiltered(numRows);
 
-    // For each relation ID, look up the property in propertyNodeGroups
     auto nodeGroups = relTable->propertyNodeGroups.get();
 
     
-    // Process each relation ID and scan the property
     for (common::sel_t i = 0; i < numRows; i++) {
         auto pos = selVector[i];
         auto relID = relIDVector->getValue<common::internalID_t>(pos);
         
-        // Get node group index and offset within the group
         auto nodeGroupIdx = storage::StorageUtils::getNodeGroupIdx(relID.offset);
         auto offsetInNodeGroup = relID.offset - storage::StorageUtils::getStartOffsetOfNodeGroup(nodeGroupIdx);
 
-        // Set to NULL by default
         propertyVector->setNull(i, true);
         
         if (nodeGroupIdx < nodeGroups->getNumNodeGroups()) {
@@ -83,17 +76,14 @@ bool RelPropertyScan::getNextTuplesInternal(ExecutionContext* context) {
                         tmpVector->setState(std::make_shared<common::DataChunkState>());
                     }
 
-                    // set up a scan state for this specific row
                     storage::TableScanState scanState(relTable->getTableID(), {propertyColumnId});
                     scanState.outputVectors.push_back(tmpVector.get());
                     scanState.nodeGroupScanState = std::make_unique<storage::NodeGroupScanState>(1);
                     scanState.nodeGroup = nodeGroup;
                     scanState.source = storage::TableScanSource::COMMITTED;
                     
-                    // initialize outState to avoid null pointer in scan operation
                     scanState.outState = tmpVector->state.get();
 
-                    // scan only the single value we need
                     storage::NodeGroupScanResult result =
                         nodeGroup->scan(transaction, scanState, offsetInNodeGroup, 1);
 
